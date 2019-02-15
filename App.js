@@ -1,0 +1,167 @@
+import React, {Component} from 'react';
+import {ScrollView} from 'react-native';
+import {createAppContainer,createStackNavigator} from 'react-navigation';
+import {Container, Text, ListItem, Left, Thumbnail, Body, List, Spinner} from 'native-base';
+import axios from 'axios'
+
+class FirstScreen extends Component {
+  constructor() {
+    super()
+    this.state={teamsList:'',isLoading:false}
+  }
+  static navigationOptions={
+    title:'La Liga Teams',
+    headerStyle:{backgroundColor:'navy'},
+    headerTintColor:'white'
+  }
+  componentDidMount() {
+    this.setState({isLoading:true})
+    axios.get('https://www.thesportsdb.com/api/v1/json/1/search_all_teams.php?s=Soccer&c=Spain')
+    .then((output)=>{this.setState({
+      teamsList:output.data.teams,
+      isLoading:false
+    })})
+  }
+  showTeams() {
+    return this.state.teamsList.map((val,i)=>{
+      var idTim=val.idTeam
+      var namaTim=val.strTeam
+      var web=val.strWebsite
+      var logo=val.strTeambadge
+      return (
+        <ListItem key={i} onPress={()=>{this.props.navigation.navigate('SecondScreen',{
+          idTim:idTim,
+          namaTim:namaTim
+        })}}>
+          <Left>
+            <Thumbnail source={{uri:logo}}></Thumbnail>
+          </Left>
+          <Body>
+            <Text>{namaTim}</Text>
+            <Text note>{web}</Text>
+          </Body>
+        </ListItem>
+      )
+    })
+  }
+  render() {
+    return (
+      <Container>
+        <ScrollView>
+          <List>
+            {this.state.isLoading ? <Spinner></Spinner> : this.state.teamsList ? this.showTeams() : <Text></Text>}
+          </List>
+        </ScrollView>
+      </Container>
+    );
+  }
+}
+
+class SecondScreen extends Component {
+  constructor(props) {
+    super(props)
+    this.state={
+      playersList:'',
+      isLoading:false,
+      idTim:this.props.navigation.getParam('idTim')
+    }
+  }
+  static navigationOptions = ({navigation})=> {
+    return {
+      title:navigation.getParam('namaTim'),
+      headerStyle:{backgroundColor:'navy'},
+      headerTintColor:'white'
+    }
+  }
+  componentDidMount() {
+    this.setState({isLoading:true})
+    axios.get(`https://www.thesportsdb.com/api/v1/json/1/lookup_all_players.php?id=${this.state.idTim}`)
+    .then((output)=> {this.setState({
+      playersList:output.data.player,
+      isLoading:false
+    })})
+  }
+  showPlayers() {
+    return this.state.playersList.map((val,i)=> {
+      var idPemain=val.idPlayer
+      var namaPemain=val.strPlayer
+      var foto=val.strThumb
+      var posisi=val.strPosition
+      var desc=val.val.strDescriptionEN
+      var wn=val.strNationality
+      return (
+        <ListItem key={i} avatar onPress={()=> {this.props.navigation.navigate('ThirdScreen',{
+          idPemain:idPemain,
+          namaPemain:namaPemain,
+          desc:desc,
+          wn:wn,
+          foto:foto
+        })}}>
+          <Left>
+            <Thumbnail square source={{uri:foto}}></Thumbnail>
+          </Left>
+          <Body>
+            <Text>{namaPemain}</Text>
+            <Text note>{posisi}</Text>
+          </Body>
+        </ListItem>
+      )
+    })
+  }
+  render() {
+    return (
+      <Container>
+        <ScrollView>
+          <List>
+            {this.state.isLoading ? <Spinner></Spinner> : this.state.playersList ? this.showPlayers() : <Text></Text>}
+          </List>
+        </ScrollView>
+      </Container>
+    )
+  }
+}
+
+class ThirdScreeen extends Component {
+  constructor(props) {
+    super(props)
+    this.state={
+      details:'',
+      isLoading:false,
+      idPemain:this.props.navigation.getParam('idPemain')
+    }
+  }
+  static navigationOptions = ({navigation}) => {return {
+    title:navigation.getParam('namaPemain'),
+    headerStyle:{backgroundColor:'navy',},
+    headerTintColor:'white'
+  }}
+  componentDidMount() {
+    this.setState({isLoading:true})
+    axios.get(`https://www.thesportsdb.com/api/v1/json/1/lookupplayer.php?id=${this.state.idPemain}`)
+    .then((output)=> {this.setState({
+      details:output.data.players[0],
+      isLoading:false
+    })})
+  }
+  show() {
+    
+  }
+  render() {
+    return(
+      <Container>
+
+      </Container>
+    )
+  }
+}
+
+var AppNavigator=createStackNavigator(
+  {
+    HalSatu:FirstScreen,
+    HalDua:SecondScreen,
+    HalTiga:ThirdScreeen
+  },
+  {initialRouteName:'HalSatu'}
+)
+
+export default createAppContainer(AppNavigator)
